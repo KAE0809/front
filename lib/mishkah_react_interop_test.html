@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mishkah React Interop Test</title>
+    <style>
+        body {
+            font-family: system-ui;
+            padding: 20px;
+        }
+
+        .card {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+    </style>
+    <script src="mishkah.core.js"></script>
+    <script src="mishkah-react.js"></script>
+</head>
+
+<body>
+
+    <div id="app-react-interop"></div>
+
+    <script>
+        const { render, useState, useEffect, useRef, useMemo, html } = Mishkah.React;
+        const M = Mishkah;
+
+        // ---------------------------------------------------------
+        // 1. Simulate Mishkah UI Components (from mishkah-ui.js)
+        // ---------------------------------------------------------
+        M.UI = M.UI || {}; // Ensure M.UI exists for resolution
+
+        // UI.Button expects (attrs, children)
+        M.UI.Button = ({ attrs = {}, variant = 'primary' }, children) => {
+            const className = `btn btn-${variant} ${attrs.class || ''}`;
+            return M.h('button', 'Forms', { attrs: { ...attrs, class: className } }, children || []);
+        };
+
+        // UI.Card expects (props, children)
+        M.UI.Card = ({ title }, children) => {
+            return M.h('div', 'Containers', { attrs: { class: 'card' } }, [
+                M.h('h3', 'Text', {}, [title]),
+                M.h('hr', 'Containers', {}, []),
+                ...children
+            ]);
+        };
+
+        // Alias for direct usage if needed
+        const UI = M.UI;
+
+        // ---------------------------------------------------------
+        // 2. React Application
+        // ---------------------------------------------------------
+        function App() {
+            const [count, setCount] = useState(0);
+            const inputRef = useRef(null);
+
+            // useMemo
+            const double = useMemo(() => {
+                console.log('Calculating double...');
+                return count * 2;
+            }, [count]);
+
+            // useEffect
+            useEffect(() => {
+                console.log('Effect: Count changed to', count);
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            }, [count]);
+
+            function increment() {
+                setCount(c => c + 1);
+            }
+
+            // ---------------------------------------------------------
+            // 3. Interoperability Magic
+            // ---------------------------------------------------------
+            return html`
+                <${UI.Card} title="React + Mishkah UI Interop ⚛️🤝">
+                    <p>Count: <strong>${count}</strong></p>
+                    <p>Double (Memo): ${double}</p>
+                    
+                    <div style="margin: 10px 0;">
+                        <!-- 1. Spread Props Support -->
+                        <${UI.Button} ...${{ onclick: increment, variant: 'primary', title: 'Spread Props!' }}>
+                            Increment (Spread)
+                        </${UI.Button}>
+                        
+                        <!-- 2. Function Props (Direct Reference) -->
+                        <Button onclick=${increment} variant="secondary" style="margin-left: 5px;">
+                            Increment (Function Prop)
+                        </Button>
+                    </div>
+
+                    <div style="margin-top: 10px;">
+                        <input ref="${inputRef}" placeholder="I get focus on update!" />
+                    </div>
+
+                    <p style="color: #666; font-size: 0.9em;">
+                        <em>This demonstrates React Hooks driving standard Mishkah UI components.</em>
+                    </p>
+                </${UI.Card}>
+            `;
+        }
+
+        render(App, document.getElementById('app-react-interop'));
+
+    </script>
+</body>
+
+</html>
