@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mishkah Svelte Layer Test</title>
+    <style>
+        body {
+            font-family: system-ui;
+            padding: 20px;
+        }
+
+        .card {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-width: 400px;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            background: #ff3e00;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #e63800;
+        }
+    </style>
+    <script src="mishkah.core.js"></script>
+    <script src="mishkah-react.js"></script>
+    <script src="mishkah-svelte.js"></script>
+</head>
+
+<body>
+
+    <div id="app-svelte"></div>
+
+    <script>
+        const { mount, state, derived, effect, html } = Mishkah.Svelte;
+
+        function Counter() {
+
+            // 4. Methods (Direct Mutation!)
+            function inc() {
+                s.count++; // Look ma, no setState!
+            }
+
+            function updateText(e) {
+                s.text = e.target.value;
+            }
+
+            // 5. Template
+            return () => html`
+                <div class="card">
+                    <h2>Svelte 5 (Runes) 🧡</h2>
+                    <p>Count: <strong>${s.count}</strong> (Double: ${double.value})</p>
+                    <button onclick="${inc}">Increment</button>
+                    <hr>
+                    <p>${s.text}</p>
+                    <input value="${s.text}" oninput="${updateText}" />
+                </div>
+            `;
+        }
+
+        mount(Counter, document.getElementById('app-svelte'));
+
+    </script>
+</body>
+
+</html>

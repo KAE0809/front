@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mishkah Alpine Layer Test</title>
+    <style>
+        body {
+            font-family: system-ui;
+            padding: 20px;
+        }
+
+        .card {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            background: #77c1d2;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #5da8b9;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .active {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+    <script src="mishkah.core.js"></script>
+    <script src="mishkah-react.js"></script>
+    <script src="mishkah-svelte.js"></script>
+    <script src="mishkah-alpine.js"></script>
+</head>
+
+<body>
+
+    <!-- Alpine Component 1: Counter -->
+    <div x-data="{ count: 0, open: false }" class="card">
+        <h2>Alpine-like (Direct DOM) 🏔️</h2>
+
+        <p>Count: <strong x-text="count"></strong></p>
+
+        <button @click="count++">Increment</button>
+        <button @click="open = !open">Toggle Details</button>
+
+        <div x-show="open" style="margin-top: 10px; padding: 10px; background: #f0f9ff;">
+            <p>This is toggled via <code>x-show</code>!</p>
+            <p>Current count is <span x-text="count"></span></p>
+        </div>
+    </div>
+
+    <!-- Alpine Component 2: Two-way Binding -->
+    <div x-data="{ message: 'Hello World', color: 'red' }" class="card">
+        <h3>Two-way Binding</h3>
+
+        <input type="text" x-model="message" style="width: 100%; padding: 5px;">
+        <p>Message: <span x-text="message" :style="'color: ' + color"></span></p>
+
+        <div style="margin-top: 10px;">
+            <button @click="color = 'red'">Red</button>
+            <button @click="color = 'blue'">Blue</button>
+            <button @click="color = 'green'">Green</button>
+        </div>
+    </div>
+
+</body>
+
+</html>

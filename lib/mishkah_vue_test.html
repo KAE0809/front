@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mishkah Vue Layers Test</title>
+    <style>
+        body {
+            font-family: system-ui;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .card {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            flex: 1;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+    </style>
+    <script src="mishkah.core.js"></script>
+    <script src="mishkah-react.js"></script>
+    <script src="mishkah-vue.js"></script>
+    <script src="mishkah-vue3.js"></script>
+</head>
+
+<body>
+
+    <!-- Vue 2 App -->
+    <div id="app-vue2" class="card"></div>
+
+    <!-- Vue 3 App -->
+    <div id="app-vue3" class="card"></div>
+
+    <script>
+        // ==========================================
+        // Test 1: Vue 2 (Options API)
+        // ==========================================
+        const { createApp, html } = Mishkah.Vue;
+
+        const AppVue2 = {
+            data() {
+                return { count: 0, message: 'Hello Vue 2!' }
+            },
+            methods: {
+                inc() {
+                    this.count++;
+                    console.log('Vue 2 Clicked:', this.count);
+                },
+                updateMsg(e) {
+                    this.message = e.target.value;
+                }
+            },
+            mounted() {
+                console.log('Vue 2 Mounted!');
+            },
+            // Note: Template must be a function returning html`` to be reactive
+            template: function () {
+                return html`
+                    <div>
+                        <h2>Vue 2 (Options API) 🏛️</h2>
+                        <p>Count: <strong>${this.count}</strong></p>
+                        <button onclick="${this.inc}">Increment</button>
+                        <hr>
+                        <p>${this.message}</p>
+                        <input value="${this.message}" oninput="${this.updateMsg}" />
+                    </div>
+                `;
+            }
+        };
+
+        createApp(AppVue2).mount('#app-vue2');
+
+
+        // ==========================================
+        // Test 2: Vue 3 (Composition API)
+        // ==========================================
+        const { createApp: createApp3, ref, onMounted, html: html3 } = Mishkah.Vue3;
+
+        const AppVue3 = {
+            setup() {
+                const count = ref(0);
+                const inc = () => count.value++;
+
+                onMounted(() => {
+                    console.log('Vue 3 Mounted!');
+                });
+
+                return { count, inc };
+            },
+            template: (ctx) => html3`
+                <div>
+                    <h2>Vue 3 (Composition API) 🧪</h2>
+                    <p>Count: <strong>${ctx.count.value}</strong></p>
+                    <button onclick="${ctx.inc}">Increment</button>
+                    <p><em>Powered by Mishkah React Hooks</em></p>
+                </div>
+            `
+        };
+
+        createApp3(AppVue3).mount('#app-vue3');
+
+    </script>
+</body>
+
+</html>

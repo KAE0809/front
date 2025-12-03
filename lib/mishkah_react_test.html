@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mishkah React Layer Test</title>
+    <style>
+        body {
+            font-family: system-ui;
+            padding: 20px;
+        }
+
+        .card {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+    </style>
+    <script src="mishkah.core.js"></script>
+    <script src="mishkah-react.js"></script>
+</head>
+
+<body>
+    <h1>Mishkah React Layer Test ⚛️</h1>
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect, html, render } = Mishkah.React;
+
+        function Counter() {
+            const [count, setCount] = useState(0);
+            const [text, setText] = useState('Initial');
+
+            useEffect(() => {
+                console.log('Effect triggered! Count is:', count);
+                document.title = `Count: ${count}`;
+            }, [count]);
+
+            return html`
+                <div class="card">
+                    <h2>Counter Component</h2>
+                    <p>Current Count: <strong>${count}</strong></p>
+                    <button onclick="${() => setCount(c => c + 1)}">Increment</button>
+                    <button onclick="${() => setCount(0)}">Reset</button>
+                    
+                    <hr style="margin: 20px 0;">
+                    
+                    <h3>Text State</h3>
+                    <p>Text: ${text}</p>
+                    <input value="${text}" oninput="${(e) => setText(e.target.value)}" />
+                </div>
+            `;
+        }
+
+        // Mount
+        render(Counter, document.getElementById('root'));
+    </script>
+</body>
+
+</html>

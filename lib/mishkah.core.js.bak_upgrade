@@ -424,17 +424,7 @@
       var arr = flat(children), out = [];
       for (var i = 0; i < arr.length; i++) {
         var c = arr[i];
-
-        // 5. Null Handling: تحويل null/false إلى تعليق (Comment Node)
-        if (c == null || c === false) {
-          out.push({
-            _type: 'comment',
-            props: { nodeValue: 'null-placeholder' },
-            _isNullPlaceholder: true
-          });
-          continue;
-        }
-
+        if (c == null || c === false) continue;
         if (typeof c === 'string' || typeof c === 'number') {
           out.push({ _type: 'text', props: { nodeValue: String(c) } });
         } else {
@@ -458,44 +448,23 @@
         reportCoreError('CORE:VDOM', 'Invalid tag passed to h()', { tag: tag, category: category }, typeError);
         throw typeError;
       }
-
-      var tagName = String(tag || '').toLowerCase() || 'div';
-
-      // 3. Void Elements Protection (منع الأبناء للعناصر الفارغة)
-      // إذا كان العنصر من العناصر التي لا تقبل أبناء، نتجاهلهم
-      var finalChildren = children;
-      if (VOID_TAGS[tagName]) {
-        if (children && (Array.isArray(children) ? children.length > 0 : true)) {
-          // يمكن إضافة تحذير هنا في وضع التطوير
-          // console.warn('Mishkah: <' + tagName + '> cannot have children. They will be ignored.');
-        }
-        finalChildren = []; // إجبار الأبناء على أن يكونوا مصفوفة فارغة
-      }
-
       var cfg = isObj(config) ? config : {};
       var attrs = isObj(cfg.attrs) ? cfg.attrs : {};
       var events = isObj(cfg.events) ? cfg.events : {};
       var props = {};
-
       for (var k in attrs) props[k] = attrs[k];
       for (var e in events) if (e.indexOf('on') === 0) props[e] = events[e];
-
-      // 4. Top-level Props (gkey/key outside attrs)
-      // الأولوية للقيم الموجودة في المستوى الأعلى (cfg)، ثم داخل attrs
-      var finalKey = (cfg.key != null) ? String(cfg.key) : ((attrs.key != null) ? String(attrs.key) : undefined);
-      var finalGkey = (cfg.gkey != null) ? String(cfg.gkey) : ((attrs.gkey != null) ? String(attrs.gkey) : undefined);
-
       return {
         _type: 'element',
-        tag: tagName,
+        tag: String(tag || '').toLowerCase() || 'div',
         category: category || 'Containers',
         props: props,
-        key: finalKey,
-        gkey: finalGkey,
+        key: (attrs.key != null) ? String(attrs.key) : undefined,
+        gkey: (attrs.gkey != null) ? String(attrs.gkey) : undefined,
         _uid: 'm-' + (++uid),
         _path: null,
         _dom: null,
-        children: normalizeChildren(finalChildren)
+        children: normalizeChildren(children)
       };
     }
 
@@ -662,15 +631,6 @@
         return tn;
       }
 
-      // Handle comment nodes (for null placeholders)
-      if (vnode._type === 'comment') {
-        var cn = global.document.createComment(vnode.props ? (vnode.props.nodeValue || '') : '');
-        vnode._dom = cn;
-        vnode._path = (parentPath || '') + '/#comment';
-        trackVNodeDom(vnode);
-        return cn;
-      }
-
       try { M.Guardian.checkBuiltIn(vnode); } catch (e) { M.Auditor && M.Auditor.warn('W-G-BUILTIN', 'Guardian.checkBuiltIn', e); }
       try { M.Guardian.checkUserLaws(vnode, db); } catch (e2) { M.Auditor && M.Auditor.warn('W-G-LAWS', 'Guardian.checkUserLaws', e2); }
 
@@ -707,22 +667,6 @@
       if (opts == null) opts = {}; if (parentPath == null) parentPath = "";
       var host = parent._dom || parent;
       var dom = prev ? prev._dom : null;
-
-      // Handle comment nodes (replacement or update)
-      if (next && next._type === 'comment') {
-        if (!prev || prev._type !== 'comment') {
-          var cn = render(next, db, parentPath);
-          if (dom && dom.parentNode) {
-            dom.parentNode.replaceChild(cn, dom);
-          } else if (host) {
-            host.appendChild(cn);
-          }
-        } else {
-          next._dom = dom;
-          trackVNodeDom(next);
-        }
-        return;
-      }
 
       // Check if element is frozen - skip patching entirely
       if (dom && dom.nodeType === 1) {
@@ -1475,19 +1419,7 @@
   // -------------------------------------------------------------------
   // Exports
   // -------------------------------------------------------------------
-  // 1. Flatten DSL (D.Div بدلًا من D.Containers.Div)
-  var flatDSL = {};
-  for (var cat in hAtoms) {
-    flatDSL[cat] = hAtoms[cat];
-    for (var tag in hAtoms[cat]) {
-      if (!flatDSL[tag]) flatDSL[tag] = hAtoms[cat][tag];
-    }
-  }
-  // احتفظ بدالة h داخل الـDSL لعدم كسر التوافق
-  flatDSL.h = VDOM.h;
-
-  M.DSL = flatDSL;
-  M.h = VDOM.h;
+  M.DSL = assign({ h: VDOM.h }, hAtoms);
   M.Head = Head;
   M.app = App;
   Object.defineProperty(M.app, 'state', {

@@ -28,7 +28,6 @@
             }
             return content.replace(/\n/g, '<br>');
         }
-
         // RawHtml is now available in Core via D.Containers.RawHtml
 
         // ============================================================
@@ -375,15 +374,15 @@
 
                 console.log('[WikiUI] Rendering article:', article.id, 'title:', title);
 
-                // Smart Linking: Process markdown then add smart links
-                let processedContent = renderMarkdown(content);
+                // Smart Linking: Process BEFORE markdown rendering
+                // Convert smart link words to special markdown that will be handled by click events
                 if (article.words && Array.isArray(article.words)) {
                     article.words.forEach(wordObj => {
                         const word = Object.keys(wordObj)[0];
                         const targetId = wordObj[word];
                         const regex = new RegExp(`\\b(${word})\\b`, 'gi');
-                        processedContent = processedContent.replace(regex,
-                            `<span class="wiki-link" data-wiki-link="${targetId}">$1</span>`);
+                        // Mark words with special syntax that will become clickable after render
+                        content = content.replace(regex, `**[$1](#wiki:${targetId})**`);
                     });
                 }
 
@@ -416,7 +415,7 @@
                         ])
                     ]),
 
-                    // Content - using D.RawHtml (now available in Core!)
+                    // Content - using M.UI.Markdown (the magic solution!)
                     D.Containers.Div({
                         attrs: {
                             gkey: 'wiki:link:click',
@@ -424,11 +423,9 @@
                             style: `direction: ${lang === 'ar' ? 'rtl' : 'ltr'}`
                         }
                     }, [
-                        D.Containers.RawHtml({
-                            html: processedContent,
-                            attrs: {
-                                class: tw`wiki-markdown-content prose prose-lg max-w-none`
-                            }
+                        M.UI.Markdown({
+                            content: content,
+                            className: tw`prose prose-lg max-w-none`
                         })
                     ]),
 
@@ -548,17 +545,19 @@
                         attrs: {
                             class: tw`${token('input')} w-full font-mono text-sm min-h-[300px] resize-y`,
                             gkey: 'wiki:form:input',
-                            'data-field': 'content_en'
+                            'data-field': 'content_en',
+                            value: getValue('content_en', article.content.en)
                         }
-                    }, [getValue('content_en', article.content.en)])),
+                    })),
                     FormField('المحتوى (عربي - Markdown)', window.M.UI.Textarea({
                         attrs: {
                             class: tw`${token('input')} w-full font-mono text-sm min-h-[300px] resize-y`,
                             dir: 'rtl',
                             gkey: 'wiki:form:input',
-                            'data-field': 'content_ar'
+                            'data-field': 'content_ar',
+                            value: getValue('content_ar', article.content.ar)
                         }
-                    }, [getValue('content_ar', article.content.ar)]))
+                    }))
                 ]),
 
                 FormField('Keywords (comma-separated)', window.M.UI.Input({
@@ -695,6 +694,7 @@
                 border-bottom: 1px dashed var(--primary);
                 transition: all 0.2s;
             }
+            }
             .wiki-link:hover {
                 text-decoration: underline;
                 opacity: 0.8;
@@ -733,7 +733,7 @@
         `;
         document.head.appendChild(styleTag);
 
-        console.log('✅ Mishkah Wiki UI loaded with enhanced dark mode');
+        console.log('✅ Mishkah Wiki UI loaded - clean solution with M.UI.Markdown');
     }
 
     waitForDSL();
