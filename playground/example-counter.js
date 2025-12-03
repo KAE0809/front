@@ -251,66 +251,111 @@ Perfect for comparing framework approaches!`,
           framework: 'react'
           , wikiId: 'react-counter'
           ,
-          code:
-            `<!DOCTYPE html>
+          code: ` <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>React Counter</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #f0f0f0;
-    }
-    .container {
-      text-align: center;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    h1 { color: #333; margin: 0 0 1rem; }
-    .count { font-size: 4rem; font-weight: bold; color: #61dafb; margin: 1rem 0; }
-    button {
-      padding: 0.75rem 2rem;
-      font-size: 1.1rem;
-      background: #61dafb;
-      color: #333;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    button:hover { background: #4fa8c5; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mishkah React Interop Test</title>
+    <style>
+        body { font-family: system-ui; padding: 20px; }
+        .card { padding: 20px; border: 1px solid #ddd; border-radius: 8px; max-width: 500px; margin-bottom: 20px; }
+        .btn { padding: 8px 16px; cursor: pointer; border-radius: 4px; border: none; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+    </style>
+    <script src="../lib/mishkah.core.js"></script>
+    <script src="../lib/mishkah-react.js"></script>
 </head>
 <body>
-  <div id="root"></div>
+    <div id="app-react-interop"></div>
 
-  <script type="text/babel">
-    function Counter() {
-      const [count, setCount] = React.useState(0);
+    <script>
+        const { render, useState, useEffect, useRef, useMemo, html } = Mishkah.React;
+        const M = Mishkah;
 
-      return (
-        <div className="container">
-          <h1>React Counter</h1>
-          <div className="count">{count}</div>
-          <button onClick={() => setCount(count + 1)}>Increment</button>
-        </div>
-      );
-    }
+        // ---------------------------------------------------------
+        // 1. Simulate Mishkah UI Components (from mishkah-ui.js)
+        // ---------------------------------------------------------
+        M.UI = M.UI || {}; // Ensure M.UI exists for resolution
+        
+        // UI.Button expects (attrs, children)
+        M.UI.Button = ({ attrs = {}, variant = 'primary' }, children) => {
+            const className = \`btn btn-\${variant} \${attrs.class || ''}\`;
+            return M.h('button', 'Forms', { attrs: { ...attrs, class: className } }, children || []);
+        };
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<Counter />);
-  </script>
+        // UI.Card expects (props, children)
+        M.UI.Card = ({ title }, children) => {
+            return M.h('div', 'Containers', { attrs: { class: 'card' } }, [
+                M.h('h3', 'Text', {}, [title]),
+                M.h('hr', 'Containers', {}, []),
+                ...children
+            ]);
+        };
+        
+        // Alias for direct usage if needed
+        const UI = M.UI;
+
+        // ---------------------------------------------------------
+        // 2. React Application
+        // ---------------------------------------------------------
+        function App() {
+            const [count, setCount] = useState(0);
+            const inputRef = useRef(null);
+
+            // useMemo
+            const double = useMemo(() => {
+                console.log('Calculating double...');
+                return count * 2;
+            }, [count]);
+
+            // useEffect
+            useEffect(() => {
+                console.log('Effect: Count changed to', count);
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            }, [count]);
+
+            function increment() {
+                setCount(c => c + 1);
+            }
+
+            // ---------------------------------------------------------
+            // 3. Interoperability Magic
+            // ---------------------------------------------------------
+            return html\`
+                <\${UI.Card} title="React + Mishkah UI Interop ⚛️🤝">
+                    <p>Count: <strong>\${count}</strong></p>
+                    <p>Double (Memo): \${double}</p>
+                    
+                    <div style="margin: 10px 0;">
+                        <!-- 1. Spread Props Support -->
+                        <\${UI.Button} ...\${{ onclick: increment, variant: 'primary', title: 'Spread Props!' }}>
+                            Increment (Spread)
+                        </\${UI.Button}>
+                        
+                        <!-- 2. Function Props (Direct Reference) -->
+                        <Button onclick=\${increment} variant="secondary" style="margin-left: 5px;">
+                            Increment (Function Prop)
+                        </Button>
+                    </div>
+
+                    <div style="margin-top: 10px;">
+                        <input ref="\${inputRef}" placeholder="I get focus on update!" />
+                    </div>
+
+                    <p style="color: #666; font-size: 0.9em;">
+                        <em>This demonstrates React Hooks driving standard Mishkah UI components.</em>
+                    </p>
+                </\${UI.Card}>
+            \`;
+        }
+
+        render(App, document.getElementById('app-react-interop'));
+
+    </script>
 </body>
 </html>`
         },
@@ -321,60 +366,60 @@ Perfect for comparing framework approaches!`,
           code: `// Mishkah DSL Counter with i18n & Theme Support
                 // Mishkah DSL Counter - Clean Version
 const database = {
-  count: 0,
-  env: { theme: 'dark', lang: 'ar', dir: 'rtl' },
-  i18n: {
-    dict: {
-      'app.title': { ar: 'عداد مشكاة', en: 'Mishkah Counter' },
-      'counter.value': { ar: 'القيمة الحالية', en: 'Current Value' },
-      'increment': { ar: 'زيادة', en: 'Increment' },
-      'decrement': { ar: 'نقصان', en: 'Decrement' },
-      'reset': { ar: 'إعادة تعيين', en: 'Reset' }
-    }
-  }
-};
+        count: 0,
+        env: { theme: 'dark', lang: 'ar', dir: 'rtl' },
+        i18n: {
+          dict: {
+            'app.title': { ar: 'عداد مشكاة', en: 'Mishkah Counter' },
+            'counter.value': { ar: 'القيمة الحالية', en: 'Current Value' },
+            'increment': { ar: 'زيادة', en: 'Increment' },
+            'decrement': { ar: 'نقصان', en: 'Decrement' },
+            'reset': { ar: 'إعادة تعيين', en: 'Reset' }
+          }
+        }
+      };
 
-const orders = {
-  'counter.increment': {
-    on: ['click'],
-    gkeys: ['inc'],
-    handler: (e, ctx) => ctx.setState(s => ({ ...s, count: s.count + 1 }))
-  },
-  'counter.decrement': {
-    on: ['click'],
-    gkeys: ['dec'],
-    handler: (e, ctx) => ctx.setState(s => ({ ...s, count: Math.max(0, s.count - 1) }))
-  },
-  'counter.reset': {
-    on: ['click'],
-    gkeys: ['reset'],
-    handler: (e, ctx) => ctx.setState(s => ({ ...s, count: 0 }))
-  }
-};
+      const orders = {
+        'counter.increment': {
+          on: ['click'],
+          gkeys: ['inc'],
+          handler: (e, ctx) => ctx.setState(s => ({ ...s, count: s.count + 1 }))
+        },
+        'counter.decrement': {
+          on: ['click'],
+          gkeys: ['dec'],
+          handler: (e, ctx) => ctx.setState(s => ({ ...s, count: Math.max(0, s.count - 1) }))
+        },
+        'counter.reset': {
+          on: ['click'],
+          gkeys: ['reset'],
+          handler: (e, ctx) => ctx.setState(s => ({ ...s, count: 0 }))
+        }
+      };
 
-function App(db) {
-  const D = Mishkah.DSL;
-  const t = (key) => db.i18n?.dict[key]?.[db.env.lang] || key;
-  
-  return D.Containers.Div({
-    attrs: { 
-      class: 'counter-app',
-      style: 'min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);'
-    }
-  }, [
-    // Animated background orbs
-    D.Containers.Div({
-      attrs: { class: 'orb orb-1' }
-    }),
-    D.Containers.Div({
-      attrs: { class: 'orb orb-2' }
-    }),
-    
-    // Main card
-    D.Containers.Div({
-      attrs: { 
-        class: 'counter-card',
-        style: \`
+      function App(db) {
+      const D = Mishkah.DSL;
+      const t = (key) => db.i18n?.dict[key]?.[db.env.lang] || key;
+
+      return D.Containers.Div({
+        attrs: {
+          class: 'counter-app',
+          style: 'min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);'
+        }
+      }, [
+        // Animated background orbs
+        D.Containers.Div({
+          attrs: { class: 'orb orb-1' }
+        }),
+        D.Containers.Div({
+          attrs: { class: 'orb orb-2' }
+        }),
+
+        // Main card
+        D.Containers.Div({
+          attrs: {
+            class: 'counter-card',
+            style: \`
           position: relative;
           max-width: 500px;
           width: 100%;
