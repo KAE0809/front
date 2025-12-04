@@ -569,7 +569,7 @@
     // -------------------------------------------------------------------
     // createElement (for JSX support)
     // -------------------------------------------------------------------
-    function createElement(type, props) {
+    function createElement(type, props, ...children) {
         // Flatten children
         var flatChildren = [];
         function flatten(arr) {
@@ -581,7 +581,7 @@
                 }
             }
         }
-        /* FIXED */ var children = []; for (var _i = 2; _i < arguments.length; _i++) { children.push(arguments[_i]); } flatten(children);
+        flatten(children);
 
         // If type is a function (component)
         if (typeof type === 'function') {
@@ -604,7 +604,7 @@
                 var value = props[key];
 
                 // Event handlers
-                if (key.indexOf('on') === 0 && typeof value === 'function') {
+                if (key.startsWith('on') && typeof value === 'function') {
                     var eventName = key.substring(2).toLowerCase();
                     mishkahProps.events[eventName] = value;
                 }
@@ -687,4 +687,3 @@
     };
 
 }));
-

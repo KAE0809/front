@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>JSX Test - Simple</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+
+        .error {
+            background: #fee;
+            border: 2px solid #f00;
+            padding: 20px;
+            color: #f00;
+        }
+
+        .success {
+            background: #efe;
+            border: 2px solid #0f0;
+            padding: 20px;
+            color: #0a0;
+        }
+    </style>
+    <script src="mishkah.core.js"></script>
+    <script src="mishkah-react-fixed.js"></script>
+    <script src="mishkah-jsx.js"></script>
+</head>
+
+<body>
+    <h1>JSX Simple Test</h1>
+    <div id="app"></div>
+
+    <script type="text/jsx">
+        console.log('=== JSX Script Starting ===');
+        
+        function App() {
+            return (
+                <div>
+                    <h2>Hello from JSX!</h2>
+                    <p>If you see this, JSX is working!</p>
+                </div>
+            );
+        }
+
+        console.log('About to render...');
+        Mishkah.React.render(App, document.getElementById('app'));
+        console.log('Render complete!');
+    </script>
+</body>
+
+</html>
