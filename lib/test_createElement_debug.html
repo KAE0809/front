@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JSX Debug Test</title>
+    <script src="mishkah.core.js"></script>
+    <script src="mishkah-react.js"></script>
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script>
+        console.log('=== DEBUGGING ===');
+        console.log('Mishkah:', typeof Mishkah);
+        console.log('Mishkah.React:', typeof Mishkah.React);
+        console.log('createElement:', typeof Mishkah.React.createElement);
+        console.log('Fragment:', typeof Mishkah.React.Fragment);
+
+        // Test createElement directly
+        try {
+            var vnode = Mishkah.React.createElement('div', { className: 'test' }, 'Hello World');
+            console.log('createElement result:', vnode);
+
+            // Try to render it
+            var dom = Mishkah.VDOM.render(vnode, {});
+            console.log('Rendered DOM:', dom);
+
+            document.getElementById('app').appendChild(dom);
+            console.log('SUCCESS: Rendered to DOM!');
+        } catch (error) {
+            console.error('ERROR:', error);
+            console.error('Stack:', error.stack);
+        }
+    </script>
+</body>
+
+</html>
