@@ -71,7 +71,6 @@ function startApp() {
         showModal: false,
         modalMode: 'add', // 'add' | 'edit'
         modalSize: 'lg',
-        modalFrameworks: [],
 
         // Persistence State
         examples: [...EXAMPLES], // Start with static, merge dynamic later
@@ -135,23 +134,6 @@ function startApp() {
 </html>`;
         }
         return code;
-    }
-
-    function getFrameworksForExample(example) {
-        if (!example) return [];
-        const fromImplementations = Array.isArray(example.implementations)
-            ? example.implementations.map(i => i.framework)
-            : [];
-        const fromCode = example.code ? Object.keys(example.code) : [];
-        const fromUser = example.userCode ? Object.keys(example.userCode) : [];
-        const unique = Array.from(new Set([...fromImplementations, ...fromCode, ...fromUser]));
-        return unique.length ? unique : Object.keys(FRAMEWORKS);
-    }
-
-    function pickDefaultFramework(example, activeFramework) {
-        const frameworks = getFrameworksForExample(example);
-        if (frameworks.includes(activeFramework)) return activeFramework;
-        return frameworks[0] || Object.keys(FRAMEWORKS)[0];
     }
 
     // Debounce function for auto-save
@@ -483,8 +465,7 @@ function startApp() {
             on: ['click'],
             gkeys: ['add-example-btn'],
             handler: (e, ctx) => {
-                const defaults = Object.keys(FRAMEWORKS).slice(0, 5);
-                ctx.setState(s => ({ ...s, showModal: true, modalMode: 'add', modalFrameworks: defaults }));
+                ctx.setState(s => ({ ...s, showModal: true, modalMode: 'add' }));
             }
         },
 
@@ -492,25 +473,7 @@ function startApp() {
             on: ['click'],
             gkeys: ['edit-example-btn'],
             handler: (e, ctx) => {
-                const currentExample = ctx.getState().examples.find(ex => ex.id === ctx.getState().activeExample);
-                const fws = getFrameworksForExample(currentExample);
-                ctx.setState(s => ({ ...s, showModal: true, modalMode: 'edit', modalFrameworks: fws }));
-            }
-        },
-
-        'modal.add_framework': {
-            on: ['click'],
-            gkeys: ['add-framework-btn'],
-            handler: (e, ctx) => {
-                const select = document.getElementById('framework-select');
-                if (!select) return;
-                const value = select.value;
-                if (!value) return;
-                ctx.setState(s => {
-                    const list = Array.isArray(s.modalFrameworks) ? [...s.modalFrameworks] : [];
-                    if (!list.includes(value)) list.push(value);
-                    return { ...s, modalFrameworks: list };
-                });
+                ctx.setState(s => ({ ...s, showModal: true, modalMode: 'edit' }));
             }
         },
 
@@ -528,25 +491,11 @@ function startApp() {
             handler: async (e, ctx) => {
                 const state = ctx.getState();
                 const isEdit = state.modalMode === 'edit';
-                const frameworksToSave = Array.isArray(state.modalFrameworks) && state.modalFrameworks.length
-                    ? state.modalFrameworks
-                    : Object.keys(FRAMEWORKS);
 
                 // Collect form data
                 const titleAr = document.getElementById('title-ar').value;
                 const titleEn = document.getElementById('title-en').value;
                 const id = isEdit ? state.activeExample : Date.now().toString();
-                const readmeAr = document.getElementById('readme-ar');
-                const readmeEn = document.getElementById('readme-en');
-
-                const implementations = frameworksToSave.map(fw => {
-                    const el = document.getElementById(`code-${fw}`);
-                    return { framework: fw, code: el ? el.value : '' };
-                }).filter(item => item.code && item.code.trim().length > 0);
-                const codeObj = implementations.reduce((acc, impl) => {
-                    acc[impl.framework] = impl.code;
-                    return acc;
-                }, {});
 
                 const newExample = {
                     id: id,
@@ -556,11 +505,17 @@ function startApp() {
                         en: document.getElementById('desc-en').value
                     },
                     readme: {
-                        ar: readmeAr?.value || '',
-                        en: readmeEn?.value || ''
+                        ar: document.getElementById('readme-ar').value,
+                        en: document.getElementById('readme-en').value
                     },
-                    code: codeObj,
-                    implementations
+                    code: {
+                        vanilla: document.getElementById('code-vanilla').value,
+                        jquery: document.getElementById('code-jquery').value,
+                        vue: document.getElementById('code-vue').value,
+                        react: document.getElementById('code-react').value,
+                        'mishkah-dsl': document.getElementById('code-mishkah-dsl').value,
+                        'mishkah-htmlx': document.getElementById('code-mishkah-htmlx').value
+                    }
                 };
 
                 // Save to 'examples' table
@@ -664,17 +619,15 @@ function startApp() {
                 if (!btn) return;
                 const exampleId = btn.dataset.exampleId;
                 const state = ctx.getState();
-                const nextExample = state.examples.find(ex => ex.id === exampleId);
-                const nextFramework = pickDefaultFramework(nextExample, state.activeFramework);
-                const { code, isUser } = await loadCodeFor(exampleId, nextFramework);
+
+                const { code, isUser } = await loadCodeFor(exampleId, state.activeFramework);
 
                 ctx.setState(s => ({
                     ...s,
                     activeExample: exampleId,
-                    activeFramework: nextFramework,
                     code: code,
                     hasUserCode: isUser,
-                    previewSrc: generatePreview(nextFramework, code),
+                    previewSrc: generatePreview(state.activeFramework, code),
                     showReadme: false
                 }));
 
@@ -937,12 +890,8 @@ function startApp() {
             ,
         // Left: Frameworks & Wiki Toggle
         D.Containers.Div({ attrs: { class: 'flex items-center gap-2' } }, [
-            ...(() => {
-                const exampleFrameworks = getFrameworksForExample(example);
-                const list = exampleFrameworks.length ? exampleFrameworks : Object.keys(FRAMEWORKS);
-                return list;
-            })().map(fwId => {
-                const fwData = FRAMEWORKS[fwId] || { name: { en: fwId, ar: fwId }, lang: 'html' };
+            ...Object.keys(FRAMEWORKS).map(fwId => {
+                const fwData = FRAMEWORKS[fwId];
                 const isActive = db.activeFramework === fwId;
                 return M.UI.Button({
                     variant: isActive ? 'default' : 'ghost',
@@ -1159,14 +1108,6 @@ function startApp() {
         const isEdit = db.modalMode === 'edit';
         const example = db.examples.find(ex => ex.id === db.activeExample);
 
-        const frameworksList = Array.isArray(db.modalFrameworks) && db.modalFrameworks.length
-            ? db.modalFrameworks
-            : getFrameworksForExample(example);
-        const suggested = Object.keys(FRAMEWORKS)
-            .filter(fw => !frameworksList.includes(fw))
-            .slice(0, 10)
-            .join(', ');
-
         // Helper to get value safely
         const val = (path, lang) => {
             if (!isEdit || !example) return '';
@@ -1175,22 +1116,9 @@ function startApp() {
         };
 
         const codeVal = (fw) => {
-            if (!example) return '';
-            if (example.userCode?.[fw]) return example.userCode[fw];
-            const impl = example.implementations?.find(i => i.framework === fw);
-            if (impl?.code) return impl.code;
-            if (example.code?.[fw]) return example.code[fw];
-            return '';
+            if (!isEdit || !example) return '';
+            return example.code?.[fw] || '';
         };
-
-        const frameworkFields = frameworksList.map(fw => {
-            const label = FRAMEWORKS[fw]?.name?.[db.env.lang] || fw;
-            return M.UI.Field({
-                id: `code-${fw}`,
-                label,
-                control: M.UI.Textarea({ attrs: { id: `code-${fw}`, rows: 3, class: 'font-mono text-xs', style: 'min-height: 200px;', value: codeVal(fw) } })
-            });
-        });
 
         const formContent = D.Containers.Div({ attrs: { class: 'space-y-4' } }, [
             // Title
@@ -1203,16 +1131,13 @@ function startApp() {
             D.Containers.Div({ attrs: { class: 'grid grid-cols-2 gap-4' } }, [
                 M.UI.Field({ id: 'desc-ar', label: 'الوصف (AR)', control: M.UI.Input({ attrs: { id: 'desc-ar', value: val('description', 'ar') } }) }),
                 M.UI.Field({ id: 'desc-en', label: 'Description (EN)', control: M.UI.Input({ attrs: { id: 'desc-en', value: val('description', 'en') } }) }),
+                M.UI.Field({ id: 'code-vanilla', label: 'Vanilla JS', control: M.UI.Textarea({ attrs: { id: 'code-vanilla', rows: 3, class: 'font-mono text-xs', style: 'min-height: 200px;', value: codeVal('vanilla') } }) }),
+                M.UI.Field({ id: 'code-jquery', label: 'jQuery', control: M.UI.Textarea({ attrs: { id: 'code-jquery', rows: 3, class: 'font-mono text-xs', style: 'min-height: 200px;', value: codeVal('jquery') } }) }),
+                M.UI.Field({ id: 'code-vue', label: 'Vue.js', control: M.UI.Textarea({ attrs: { id: 'code-vue', rows: 3, class: 'font-mono text-xs', style: 'min-height: 200px;', value: codeVal('vue') } }) }),
+                M.UI.Field({ id: 'code-react', label: 'React', control: M.UI.Textarea({ attrs: { id: 'code-react', rows: 3, class: 'font-mono text-xs', style: 'min-height: 200px;', value: codeVal('react') } }) }),
+                M.UI.Field({ id: 'code-mishkah-dsl', label: 'Mishkah DSL', control: M.UI.Textarea({ attrs: { id: 'code-mishkah-dsl', rows: 3, class: 'font-mono text-xs', style: 'min-height: 200px;', value: codeVal('mishkah-dsl') } }) }),
+                M.UI.Field({ id: 'code-mishkah-htmlx', label: 'Mishkah HTMLx', control: M.UI.Textarea({ attrs: { id: 'code-mishkah-htmlx', rows: 3, class: 'font-mono text-xs', style: 'min-height: 200px;', value: codeVal('mishkah-htmlx') } }) }),
             ])
-            ,
-            D.Containers.Div({ attrs: { class: 'grid grid-cols-3 gap-2 items-end' } }, [
-                M.UI.Field({ id: 'framework-select', label: db.env.lang === 'ar' ? 'إطار العمل' : 'Framework', control: M.UI.Input({ attrs: { id: 'framework-select', placeholder: suggested || 'react, vue, angular...' } }) }),
-                D.Text.P({ attrs: { class: 'text-xs text-muted col-span-2' } }, [db.env.lang === 'ar' ? 'أضف أي إطار مشهور ثم أدخل كوده بالأسفل.' : 'Add any popular framework then paste its code below.'])
-            ]),
-            D.Containers.Div({ attrs: { class: 'flex justify-end' } }, [
-                M.UI.Button({ attrs: { gkey: 'add-framework-btn' }, variant: 'outline', size: 'sm' }, [db.env.lang === 'ar' ? 'إضافة إطار' : 'Add Framework'])
-            ]),
-            D.Containers.Div({ attrs: { class: 'grid grid-cols-2 gap-4' } }, frameworkFields)
         ]);
 
         return M.UI.Modal({
